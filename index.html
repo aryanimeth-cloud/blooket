@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#5b4bdb">
+  <title>Blook Collection Tracker</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #24213b;
+      --muted: #716f83;
+      --line: #e9e7f2;
+      --paper: #fff;
+      --bg: #f7f6fc;
+      --accent: #5b4bdb;
+      --accent-soft: #eeecff;
+      --good: #14825d;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--ink); background: var(--bg); }
+    header { padding: 38px 20px 30px; color: white; background: linear-gradient(120deg, #5141cf, #8b5bd6); }
+    .wrap { width: min(940px, 100% - 32px); margin: 0 auto; }
+    .eyebrow { margin: 0 0 7px; opacity: .8; font-size: .78rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(1.9rem, 5vw, 2.8rem); letter-spacing: -.04em; }
+    header p:last-child { margin: 9px 0 0; max-width: 650px; line-height: 1.55; opacity: .9; }
+    main { padding: 24px 0 48px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat, .panel { border: 1px solid var(--line); border-radius: 16px; background: var(--paper); box-shadow: 0 5px 20px #2c205008; }
+    .stat { padding: 17px 19px; }
+    .stat strong { display: block; font-size: 1.55rem; }
+    .stat span { color: var(--muted); font-size: .88rem; }
+    .panel { padding: 20px; }
+    .add-form { display: grid; grid-template-columns: minmax(150px, 1fr) 170px auto; gap: 10px; }
+    input, select, button { min-height: 44px; border-radius: 10px; font: inherit; }
+    input, select { width: 100%; padding: 0 12px; border: 1px solid #dcd9e9; color: var(--ink); background: white; }
+    input:focus, select:focus, button:focus-visible { outline: 3px solid #aaa1ff; outline-offset: 2px; }
+    button { padding: 0 15px; border: 0; color: white; background: var(--accent); font-weight: 700; cursor: pointer; }
+    button:hover { filter: brightness(.94); }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 20px 0 12px; }
+    .toolbar input { flex: 1 1 200px; }
+    .toolbar select { width: auto; min-width: 150px; }
+    .quiet-button { min-height: 40px; border: 1px solid var(--line); color: var(--ink); background: white; }
+    .list { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: white; }
+    .row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 60px; padding: 10px 15px; border-bottom: 1px solid var(--line); }
+    .row:last-child { border-bottom: 0; }
+    .row input[type="checkbox"] { width: 19px; height: 19px; accent-color: var(--accent); cursor: pointer; }
+    .name { font-weight: 700; overflow-wrap: anywhere; }
+    .owned .name { color: var(--good); }
+    .badge { padding: 5px 9px; border-radius: 99px; color: #5f5b75; background: #f1f0f7; font-size: .77rem; }
+    .delete { min-height: 34px; padding: 0 10px; color: #8a3649; background: #fff0f2; font-size: .85rem; }
+    .empty { padding: 32px 18px; color: var(--muted); text-align: center; }
+    .note { margin: 15px 3px 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+    .notice { min-height: 1.4em; margin: 10px 2px 0; color: var(--good); font-size: .9rem; }
+    @media (max-width: 620px) {
+      header { padding-top: 30px; }
+      .stats { gap: 8px; }
+      .stat { padding: 13px 10px; }
+      .stat strong { font-size: 1.25rem; }
+      .stat span { font-size: .76rem; }
+      .panel { padding: 14px; }
+      .add-form { grid-template-columns: 1fr; }
+      .toolbar select { flex: 1; }
+      .row { grid-template-columns: 24px minmax(0, 1fr) auto; gap: 9px; padding: 10px; }
+      .badge { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">Your personal checklist</p>
+      <h1>Blook Collection Tracker</h1>
+      <p>Keep track of the Blooks you own and the ones you still want. This is an independent checklist—it does not connect to Blooket or unlock items in a game.</p>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="stats" aria-label="Collection progress">
+      <div class="stat"><strong id="owned-count">0</strong><span>Marked owned</span></div>
+      <div class="stat"><strong id="total-count">0</strong><span>In your checklist</span></div>
+      <div class="stat"><strong id="progress">0%</strong><span>Collection progress</span></div>
+    </section>
+
+    <section class="panel" aria-label="Manage your checklist">
+      <form class="add-form" id="add-form">
+        <label><span class="visually-hidden">Blook name</span><input id="blook-name" maxlength="60" required placeholder="Add a Blook name" aria-label="Blook name"></label>
+        <label><span class="visually-hidden">Rarity or category</span><input id="blook-category" maxlength="40" placeholder="Rarity or category (optional)" aria-label="Rarity or category"></label>
+        <button type="submit">Add to list</button>
+      </form>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search your list" aria-label="Search your list">
+        <select id="filter" aria-label="Filter checklist">
+          <option value="all">All Blooks</option>
+          <option value="missing">Still wanted</option>
+          <option value="owned">Marked owned</option>
+        </select>
+        <button class="quiet-button" id="export" type="button">Export backup</button>
+        <button class="quiet-button" id="import-button" type="button">Import backup</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden>
+      </div>
+      <div class="list" id="list" aria-live="polite"></div>
+      <p class="notice" id="notice" role="status"></p>
+      <p class="note">Your list is saved in this browser on this device. Add entries from your own collection list; use Export backup to keep a copy or move it to another browser.</p>
+    </section>
+  </main>
+  <style>.visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }</style>
+  <script>
+    (() => {
+      const STORAGE_KEY = 'blook-collection-tracker-v1';
+      const list = document.querySelector('#list');
+      const form = document.querySelector('#add-form');
+      const nameInput = document.querySelector('#blook-name');
+      const categoryInput = document.querySelector('#blook-category');
+      const searchInput = document.querySelector('#search');
+      const filterInput = document.querySelector('#filter');
+      const notice = document.querySelector('#notice');
+      let items = loadItems();
+
+      function loadItems() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          return Array.isArray(parsed) ? parsed.filter(item => item && typeof item.id === 'string' && typeof item.name === 'string').map(item => ({
+            id: item.id,
+            name: item.name.slice(0, 60),
+            category: typeof item.category === 'string' ? item.category.slice(0, 40) : '',
+            owned: item.owned === true
+          })) : [];
+        } catch { return []; }
+      }
+
+      function save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        render();
+      }
+
+      function render() {
+        const owned = items.filter(item => item.owned).length;
+        document.querySelector('#owned-count').textContent = owned;
+        document.querySelector('#total-count').textContent = items.length;
+        document.querySelector('#progress').textContent = items.length ? `${Math.round(owned / items.length * 100)}%` : '0%';
+        const query = searchInput.value.trim().toLocaleLowerCase();
+        const filter = filterInput.value;
+        const shown = items.filter(item => {
+          const matchesText = `${item.name} ${item.category}`.toLocaleLowerCase().includes(query);
+          const matchesFilter = filter === 'all' || (filter === 'owned' ? item.owned : !item.owned);
+          return matchesText && matchesFilter;
+        }).sort((a, b) => a.name.localeCompare(b.name));
+        list.replaceChildren();
+        if (!shown.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.textContent = items.length ? 'No Blooks match this search or filter.' : 'Your checklist is empty. Add a Blook above to get started.';
+          list.append(empty);
+          return;
+        }
+        for (const item of shown) {
+          const row = document.createElement('div');
+          row.className = `row${item.owned ? ' owned' : ''}`;
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = item.owned;
+          checkbox.setAttribute('aria-label', `Mark ${item.name} ${item.owned ? 'not owned' : 'owned'}`);
+          checkbox.addEventListener('change', () => {
+            item.owned = checkbox.checked;
+            save();
+          });
+          const title = document.createElement('span');
+          title.className = 'name';
+          title.textContent = item.name;
+          const category = document.createElement('span');
+          category.className = 'badge';
+          category.textContent = item.category || 'Uncategorized';
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'delete';
+          remove.textContent = 'Remove';
+          remove.setAttribute('aria-label', `Remove ${item.name}`);
+          remove.addEventListener('click', () => {
+            items = items.filter(entry => entry.id !== item.id);
+            save();
+          });
+          row.append(checkbox, title, category, remove);
+          list.append(row);
+        }
+      }
+
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const name = nameInput.value.trim();
+        if (!name) return;
+        if (items.some(item => item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+          notice.textContent = 'That name is already in your checklist.';
+          return;
+        }
+        items.push({ id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`, name, category: categoryInput.value.trim(), owned: false });
+        nameInput.value = '';
+        categoryInput.value = '';
+        notice.textContent = 'Added to your checklist.';
+        save();
+        nameInput.focus();
+      });
+
+      searchInput.addEventListener('input', render);
+      filterInput.addEventListener('change', render);
+      document.querySelector('#export').addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'blook-collection-backup.json';
+        link.click();
+        URL.revokeObjectURL(link.href);
+        notice.textContent = 'Backup exported.';
+      });
+      const importFile = document.querySelector('#import-file');
+      document.querySelector('#import-button').addEventListener('click', () => importFile.click());
+      importFile.addEventListener('change', async () => {
+        const file = importFile.files && importFile.files[0];
+        if (!file) return;
+        try {
+          const data = JSON.parse(await file.text());
+          if (!Array.isArray(data) || data.some(item => !item || typeof item.name !== 'string')) throw new Error('Invalid backup');
+          const imported = data.map(item => ({
+            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}-${Math.random()}`,
+            name: item.name.trim().slice(0, 60),
+            category: typeof item.category === 'string' ? item.category.trim().slice(0, 40) : '',
+            owned: item.owned === true
+          })).filter(item => item.name);
+          const existing = new Set(items.map(item => item.name.toLocaleLowerCase()));
+          const additions = imported.filter(item => !existing.has(item.name.toLocaleLowerCase()));
+          items = items.concat(additions);
+          save();
+          notice.textContent = `Imported ${additions.length} new ${additions.length === 1 ? 'entry' : 'entries'}.`;
+        } catch {
+          notice.textContent = 'Could not import that file. Choose a valid tracker JSON backup.';
+        }
+        importFile.value = '';
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
